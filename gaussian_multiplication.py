@@ -29,10 +29,17 @@ b_ = b.bins(dx)
 # ax.plot(b_x, b_pdf, c='red', linewidth=1.)
 # ax.plot(a_x, a_pdf + b_pdf, c='red', linewidth=3.)
 
-c_muliply = {key: 28 * a_.get(key, 0.) * b_.get(key, 0.) for key in set(a_) | set(b_)}
+product = {key: a_.get(key, 0.) * b_.get(key, 0.) for key in set(a_) | set(b_)}
+product_integral = 0.
+for val in product.values():
+    product_integral += dx * val
+scale_factor = 1. / product_integral
+for key in product.keys():
+    product[key] *= scale_factor
+
 fig = plt.figure()
 ax = fig.add_subplot(111)
-ax.bar(c_muliply.keys(), c_muliply.values(), dx)
+ax.bar(product.keys(), product.values(), dx)
 ax.plot(a_x, a_pdf, c='red', linewidth=1.)
 ax.plot(b_x, b_pdf, c='red', linewidth=1.)
 # ax.plot(a_x, a_pdf * b_pdf, c='red', linewidth=2.)
