@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
 
-from probability_representations import Donut
+from probability_representations import Donut, MultiDonut
 
-n = 100000
+n = 1000000
 
 a = Donut(15., 2.6, -10, -15, num_points=n)
 b = Donut(12, 2.5, 10, 3, num_points=n)
@@ -14,15 +14,13 @@ c = Donut(10, 2.6, -3, 5, num_points=n)
 # dy = .1
 # dx = .25
 # dy = .25
-# dx = .5
-# dy = .5
-dx = 1.
-dy = 1.
+dx = .5
+dy = .5
+# dx = 1.
+# dy = 1.
 
-counts = a.multiply_probs(a.bins(dx, dy), b.bins(dx, dy), c.bins(dx, dy))
-x_vals = [point[0] for point in counts.keys()]
-y_vals = [point[1] for point in counts.keys()]
-z_vals = np.array(list(counts.values()))
+md = MultiDonut([a, b, c], dx, dy)
+x_vals, y_vals, z_vals = md.get_points_for_plotting()
 
 peak_index = np.argmax(z_vals)
 x_max, y_max, z_max = x_vals[peak_index], y_vals[peak_index], z_vals[peak_index]

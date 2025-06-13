@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
+from time import time
 
 
 # 1D Guassian Function
@@ -42,7 +43,7 @@ class Guassian():
         pass
 
 
-#
+# Donut Probability
 class Donut():
 
     def __init__(self, radius_mean, radius_stdev, x_center=0., y_center=0., num_points=100000):
@@ -65,33 +66,78 @@ class Donut():
         plt.scatter(self.x, self.y, alpha=.1, marker='.')
         plt.axis('equal')
         plt.grid(True)
+        plt.show()
 
     def round_em_up(self, x, dx):
         x = np.copy(x)
         return np.round(x / dx) * dx
 
     def bins(self, dx, dy):
+        t0 = time()
         points = np.column_stack((self.round_em_up(self.x, dx), self.round_em_up(self.y, dy)))
+        print(" ", time() - t0)
+        t0 = time()
+        # DO THIS FASTER
         points_tuples = [tuple(p) for p in points.tolist()]
+        print(" ", time() - t0)
+        t0 = time()
+        # DO THIS FASTER
         c = Counter(points_tuples)
+        print(" ", time() - t0)
         for key in c.keys():
             c[key] = float(c[key] / (self.num_points * dx * dy))
         return c
 
-    def multiply_probs(*args, **kwargs):
-        if len(args) < 3:
-            print("Not enough inputs!")
-            return None
-        d = {key: args[1].get(key, 0.) * args[2].get(key, 0.) for key in set(args[1]) | set(args[2])}
-        for ii in range(3, len(args)):
-            d = {key: d.get(key, 0.) * args[ii].get(key, 0.) for key in set(d) | set(args[ii])}
+
+# Used to combine and manipulate multiple donut probability representations
+class MultiDonut():
+
+    def __init__(self, donuts=[], dx=.5, dy=.5):
+        self.dx = dx
+        self.dy = dy
+        # self.donuts = []
+        self.donuts_discrete = []
+        for d in donuts:
+            self.add_donut(d)
+        self.counts = self.multiply_probs()
+
+    def add_donut(self, donut):
+        if type(donut) != Donut:
+            print("INCORRECT DATA TYPE")
+            return
+        t0 = time()
+        self.donuts_discrete.append(donut.bins(self.dx, self.dy))
+        print(time() - t0)
+
+    def multiply_probs(self):
+        d = {key: self.donuts_discrete[0].get(key, 0.) * self.donuts_discrete[1].get(key, 0.) for key in set(self.donuts_discrete[0]) | set(self.donuts_discrete[1])}
+        for ii in range(2, len(self.donuts_discrete)):
+            d = {key: d.get(key, 0.) * self.donuts_discrete[ii].get(key, 0.) for key in set(d) | set(self.donuts_discrete[ii])}
         d = normalize_dict(d)
         return d
 
-def normalize_dict(d):
+    def add_probs(self):
+        d = {key: self.donuts_discrete[0].get(key, 0.) + self.donuts_discrete[1].get(key, 0.) for key in set(self.donuts_discrete[0]) | set(self.donuts_discrete[1])}
+        for ii in range(2, len(self.donuts_discrete)):
+            d = {key: d.get(key, 0.) + self.donuts_discrete[ii].get(key, 0.) for key in set(d) | set(self.donuts_discrete[ii])}
+        d = normalize_dict(d)
+        return d
+
+    def get_points_for_plotting(self):
+        x_vals = [point[0] for point in self.counts.keys()]
+        y_vals = [point[1] for point in self.counts.keys()]
+        z_vals = np.array(list(self.counts.values()))
+        return x_vals, y_vals, z_vals
+
+    # TODO: FINISH THIS
+    def get_max_loc(self):
+        pass
+
+
+def normalize_dict(d, norm_val=1):
     total = 0.
     for key in d.keys():
         total += d[key]
     for key in d.keys():
-        d[key] = d[key] / total
+        d[key] = norm_val * d[key] / total
     return d
