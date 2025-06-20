@@ -19,15 +19,5 @@ dy = .5
 # dx = 1.
 # dy = 1.
 
-md = MultiDonut([a, b, c], dx, dy)
-x_vals, y_vals, z_vals = md.get_points_for_plotting()
-
-peak_index = np.argmax(z_vals)
-x_max, y_max, z_max = x_vals[peak_index], y_vals[peak_index], z_vals[peak_index]
-
-fig = plt.figure(figsize=(10, 7))
-ax = fig.add_subplot(111, projection='3d')
-ax.bar3d(x_vals, y_vals, [0]*len(z_vals), dx=dx, dy=dy, dz=z_vals)
-
-ax.scatter(x_max, y_max, z_max, color='r', s=100)
-plt.show()
+md = MultiDonut([1., a, b, c], dx, dy)
+md.plot()

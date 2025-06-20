@@ -77,11 +77,11 @@ class Donut():
         points = np.column_stack((self.round_em_up(self.x, dx), self.round_em_up(self.y, dy)))
         print(" ", time() - t0)
         t0 = time()
-        # DO THIS FASTER
+        # TODO: DO THIS FASTER
         points_tuples = [tuple(p) for p in points.tolist()]
         print(" ", time() - t0)
         t0 = time()
-        # DO THIS FASTER
+        # TODO: DO THIS FASTER
         c = Counter(points_tuples)
         print(" ", time() - t0)
         for key in c.keys():
@@ -92,7 +92,11 @@ class Donut():
 # Used to combine and manipulate multiple donut probability representations
 class MultiDonut():
 
+    # donuts must be an array of above Donut class
     def __init__(self, donuts=[], dx=.5, dy=.5):
+        if not isinstance(donuts, list):
+            print("DONUTS MUST BE A LIST OF Donut INSTANCES")
+            return
         self.dx = dx
         self.dy = dy
         # self.donuts = []
@@ -101,13 +105,18 @@ class MultiDonut():
             self.add_donut(d)
         self.counts = self.multiply_probs()
 
-    def add_donut(self, donut):
-        if type(donut) != Donut:
-            print("INCORRECT DATA TYPE")
+    # def recalculate(self):
+    #     self.multiply_probs()
+
+    def add_donut(self, donut, recalculate=False):
+        if not isinstance(donut, Donut):
+            print("THIS MONSTROCITY IS OF AN INCORRECT DATA TYPE")
             return
         t0 = time()
         self.donuts_discrete.append(donut.bins(self.dx, self.dy))
         print(time() - t0)
+        if recalculate:
+            self.multiply_probs()
 
     def multiply_probs(self):
         d = {key: self.donuts_discrete[0].get(key, 0.) * self.donuts_discrete[1].get(key, 0.) for key in set(self.donuts_discrete[0]) | set(self.donuts_discrete[1])}
@@ -123,15 +132,34 @@ class MultiDonut():
         d = normalize_dict(d)
         return d
 
-    def get_points_for_plotting(self):
-        x_vals = [point[0] for point in self.counts.keys()]
-        y_vals = [point[1] for point in self.counts.keys()]
-        z_vals = np.array(list(self.counts.values()))
-        return x_vals, y_vals, z_vals
+    def make_points_for_plotting(self):
+        self.x_vals = [point[0] for point in self.counts.keys()]
+        self.y_vals = [point[1] for point in self.counts.keys()]
+        self.z_vals = np.array(list(self.counts.values()))
+        peak_index = np.argmax(self.z_vals)
+        self.x_max, self.y_max, self.z_max = self.x_vals[peak_index], self.y_vals[peak_index], self.z_vals[peak_index]
 
-    # TODO: FINISH THIS
+    # TODO: MAKE THIS BETTER
     def get_max_loc(self):
-        pass
+        self.make_points_for_plotting()
+        return self.x_max, self.y_max, self.z_max
+
+    # Shortcut way to visualize the combined probabilities
+    def plot(self, show_peak=True):
+        # Get max peak
+        x_max, y_max, z_max = self.get_max_loc()
+
+        # Make the figure
+        fig = plt.figure(figsize=(10, 7))
+        ax = fig.add_subplot(111, projection='3d')
+        ax.bar3d(self.x_vals, self.y_vals, [0]*len(self.z_vals), dx=self.dx, dy=self.dy, dz=self.z_vals)
+
+        # Plot the peak as a red dot
+        if show_peak:
+            ax.scatter(x_max, y_max, z_max, color='r', s=100)
+
+        plt.show()
+
 
 
 def normalize_dict(d, norm_val=1):
