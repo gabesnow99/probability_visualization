@@ -39,6 +39,7 @@ class Guassian():
         if plot_show:
             plt.show()
 
+    # TODO: THIS
     def bar(self, using_bins=False, dx=None):
         pass
 
@@ -73,17 +74,17 @@ class Donut():
         return np.round(x / dx) * dx
 
     def bins(self, dx, dy):
-        t0 = time()
-        points = np.column_stack((self.round_em_up(self.x, dx), self.round_em_up(self.y, dy)))
-        print(" ", time() - t0)
-        t0 = time()
+
+        x_points = self.round_em_up(self.x, dx)
+        y_points = self.round_em_up(self.y, dy)
+
         # TODO: DO THIS FASTER
-        points_tuples = [tuple(p) for p in points.tolist()]
-        print(" ", time() - t0)
-        t0 = time()
-        # TODO: DO THIS FASTER
+        points_tuples = []
+        for ii in range(len(x_points)):
+            t = tuple([x_points[ii], y_points[ii]])
+            points_tuples.append(t)
+
         c = Counter(points_tuples)
-        print(" ", time() - t0)
         for key in c.keys():
             c[key] = float(c[key] / (self.num_points * dx * dy))
         return c
@@ -104,21 +105,23 @@ class MultiDonut():
         for d in donuts:
             self.add_donut(d)
         self.counts = self.multiply_probs()
-
-    # def recalculate(self):
-    #     self.multiply_probs()
+        # self.counts = self.add_probs()
 
     def add_donut(self, donut, recalculate=False):
         if not isinstance(donut, Donut):
             print("THIS MONSTROCITY IS OF AN INCORRECT DATA TYPE")
             return
-        t0 = time()
+        # t0 = time()
         self.donuts_discrete.append(donut.bins(self.dx, self.dy))
-        print(time() - t0)
+        # print(time() - t0)
         if recalculate:
             self.multiply_probs()
 
     def multiply_probs(self):
+        if len(self.donuts_discrete) == 0:
+            return None
+        if len(self.donuts_discrete) == 1:
+            return normalize_dict(self.donuts_discrete[0])
         d = {key: self.donuts_discrete[0].get(key, 0.) * self.donuts_discrete[1].get(key, 0.) for key in set(self.donuts_discrete[0]) | set(self.donuts_discrete[1])}
         for ii in range(2, len(self.donuts_discrete)):
             d = {key: d.get(key, 0.) * self.donuts_discrete[ii].get(key, 0.) for key in set(d) | set(self.donuts_discrete[ii])}
@@ -161,11 +164,13 @@ class MultiDonut():
         plt.show()
 
 
-
+# Used to normalize the values of a dictionary to the desired value
+# TODO: TEST THE NORM_VAL
 def normalize_dict(d, norm_val=1):
     total = 0.
     for key in d.keys():
         total += d[key]
     for key in d.keys():
-        d[key] = norm_val * d[key] / total
+        if total > 0:
+            d[key] = norm_val * d[key] / total
     return d
